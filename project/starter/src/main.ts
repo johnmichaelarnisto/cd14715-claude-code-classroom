@@ -1,49 +1,105 @@
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// Load environment variables
+import { CodeReviewOrchestrator } from './orchestrator';
+import { ReportGenerator } from './utils/report-generator';
+
 dotenv.config();
 
-/**
- * Main entry point for the Claude Multi-Agent Code Review System
- * Usage: npm run dev <owner> <repo> <pr-number>
- */
-async function main() {
+async function main(): Promise<void> {
   const [owner, repo, prStr] = process.argv.slice(2);
 
-  // TODO: Validate command line arguments
-  // - Check if owner, repo, and prStr are provided
-  // - Convert prStr to number and validate it's a valid integer
-  // - Exit with error message if validation fails
+  if (!owner || !repo || !prStr) {
+    console.error(
+      'Usage: npm run dev -- <owner> <repo> <pr-number>'
+    );
+    process.exitCode = 1;
+    return;
+  }
 
-  // TODO: Validate authentication (choose ONE method)
-  // Students must have either:
-  //   - ANTHROPIC_API_KEY environment variable, OR
-  //   - AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY for Bedrock
-  //
-  // If using AWS Bedrock:
-  //   - Verify AWS_REGION is set
-  //   - Log: "🔐 Using AWS Bedrock authentication"
-  // If using Anthropic API:
-  //   - Log: "🔐 Using Anthropic API authentication"
-  // If neither method is configured:
-  //   - Exit with clear error message showing both options
+  const prNumber = Number(prStr);
 
-  // TODO: Validate ANTHROPIC_MODEL environment variable
-  // This is REQUIRED for both authentication methods
-  // - For AWS Bedrock: us.anthropic.claude-sonnet-4-5-20250929-v1:0
-  // - For Anthropic API: claude-sonnet-4-5-20250929
-  // Exit with error if not set
+  if (!Number.isInteger(prNumber) || prNumber <= 0) {
+    console.error('Error: PR number must be a positive integer.');
+    process.exitCode = 1;
+    return;
+  }
 
-  console.log('start here', owner, repo, prStr)
+  const usingAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
+
+  const usingBedrock = Boolean(
+    process.env.AWS_ACCESS_KEY_ID &&
+    process.env.AWS_SECRET_ACCESS_KEY &&
+    process.env.AWS_REGION
+  );
+
+  if (!usingAnthropic && !usingBedrock) {
+    console.error(
+      'Error: No authentication configured.\n' +
+      'Provide ANTHROPIC_API_KEY or AWS Bedrock credentials.'
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  if (usingBedrock) {
+    console.log('Using AWS Bedrock authentication');
+  } else {
+    console.log('Using Anthropic API authentication');
+  }
+
+  if (!process.env.ANTHROPIC_MODEL) {
+    console.error(
+      'Error: ANTHROPIC_MODEL environment variable is required.'
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   try {
-    // TODO: Create orchestrator instance
-    // TODO: Call .reviewPullRequest(owner, repo, prNumber);
-    // TODO: Generate formatted reports using ReportGenerator
-    // Hint: Use ReportGenerator to create Markdown, HTML, and JSON reports
-    // Save reports to 'reports/' directory with appropriate filenames
+    console.log(`Reviewing ${owner}/${repo} PR #${prNumber}...`);
+
+    const orchestrator = new CodeReviewOrchestrator();
+
+    const report = await orchestrator.reviewPullRequest(
+      owner,
+      repo,
+      prNumber
+    );
+
+    const generator = new ReportGenerator();
+
+    const reportsDir = path.resolve('reports');
+    fs.mkdirSync(reportsDir, { recursive: true });
+
+    const baseName = `${owner}-${repo}-pr-${prNumber}`;
+
+    fs.writeFileSync(
+      path.join(reportsDir, `${baseName}.md`),
+      generator.generateMarkdownReport(report)
+    );
+
+    fs.writeFileSync(
+      path.join(reportsDir, `${baseName}.html`),
+      generator.generateHTMLReport(report)
+    );
+
+    fs.writeFileSync(
+      path.join(reportsDir, `${baseName}.json`),
+      generator.generateJSONReport(report)
+    );
+
+    console.log('Code review completed successfully.');
+    console.log(`Reports saved to: ${reportsDir}`);
   } catch (error) {
-    console.error('Error:', error);
+    console.error(
+      'Code review failed:',
+      error instanceof Error ? error.message : error
+    );
+
+    process.exitCode = 1;
   }
 }
 
-main();
+void main();

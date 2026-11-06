@@ -1,0 +1,91 @@
+{
+  "pullRequest": {
+    "owner": "udacity",
+    "repo": "cd14715-simple-todo-app",
+    "number": 1
+  },
+  "fileReviews": [
+    {
+      "file": "fixtures/clean-code.ts",
+      "codeQuality": {
+        "file": "fixtures/clean-code.ts",
+        "issues": [
+          {
+            "line": 80,
+            "severity": "critical",
+            "category": "bug-risk",
+            "description": "The saveUser() database query is commented out - placeholder needs implementation.",
+            "suggestion": "Implement actual database call with proper error handling."
+          }
+        ],
+        "overallScore": 78,
+        "summary": "This is a well-intentioned fixture file demonstrating clean code practices. However, there are several quality concerns: one critical issue, four medium-severity issues, and multiple low-priority items."
+      },
+      "testCoverage": {
+        "file": "fixtures/clean-code.ts",
+        "hasTests": false,
+        "testFiles": [],
+        "untestedPaths": [
+          {
+            "type": "function",
+            "location": "Line 26-29",
+            "priority": "critical",
+            "reasoning": "Email validation is security-critical.",
+            "suggestedTest": "Valid/invalid formats and edge cases."
+          }
+        ],
+        "coverageEstimate": 0,
+        "summary": "No test coverage. All functions untested, including security-critical ones."
+      },
+      "refactorings": {
+        "file": "fixtures/clean-code.ts",
+        "suggestions": [
+          {
+            "type": "modernize",
+            "location": "Line 25",
+            "impact": "low",
+            "description": "Extract EMAIL_REGEX to module constant.",
+            "before": "const emailRegex = /pattern/;",
+            "after": "const EMAIL_REGEX = /pattern/;",
+            "benefits": "Single compilation, easier maintenance."
+          }
+        ],
+        "summary": "Eight refactoring opportunities identified."
+      }
+    }
+  ],
+  "summary": {
+    "totalFiles": 1,
+    "overallScore": 78,
+    "criticalIssues": 1,
+    "highPriorityTests": 5,
+    "refactoringOpportunities": 8
+  },
+  "recommendations": [
+    {
+      "priority": "critical",
+      "category": "Implementation Completeness",
+      "description": "Database implementation in saveUser() is incomplete.",
+      "files": [
+        "fixtures/clean-code.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "Security",
+      "description": "Math.random() for ID generation is cryptographically insecure.",
+      "files": [
+        "fixtures/clean-code.ts"
+      ]
+    }
+  ],
+  "metadata": {
+    "analyzedAt": "2026-11-06T00:00:00Z",
+    "duration": 45000,
+    "agentVersions": {
+      "code-quality-analyzer": "1.0",
+      "test-coverage-analyzer": "1.0",
+      "refactoring-suggester": "1.0"
+    }
+  }
+}
